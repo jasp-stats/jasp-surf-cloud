@@ -1,1 +1,28 @@
+---
+- name: Install JASP Statistical Software for SURF Workspace
+  hosts: localhost
+  gather_facts: true
+  become: true
 
+  tasks:
+    - name: Ensure Flatpak is installed via the system package manager
+      ansible.builtin.package:
+        name: flatpak
+        state: present
+
+    - name: Ensure Flathub repository remote is added
+      ansible.builtin.command:
+        cmd: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+      changed_when: false
+
+    - name: Check if JASP is already installed
+      ansible.builtin.command:
+        cmd: flatpak info org.jaspstats.JASP
+      register: jasp_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install JASP via Flatpak if missing
+      ansible.builtin.command:
+        cmd: flatpak install -y flathub org.jaspstats.JASP
+      when: jasp_check.rc != 0
