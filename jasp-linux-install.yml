@@ -5,24 +5,20 @@
   become: true
 
   tasks:
-    - name: Ensure Flatpak is installed via the system package manager
+    - name: Ensure Flatpak is installed via system packages
       ansible.builtin.package:
         name: flatpak
         state: present
 
     - name: Ensure Flathub repository remote is added
-      ansible.builtin.command:
-        cmd: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-      changed_when: false
+      community.general.flatpak_remote:
+        name: flathub
+        state: present
+        method: system
+        url: https://dl.flathub.org/repo/flathub.flatpakrepo
 
-    - name: Check if JASP is already installed
-      ansible.builtin.command:
-        cmd: flatpak info org.jaspstats.JASP
-      register: jasp_check
-      failed_when: false
-      changed_when: false
-
-    - name: Install JASP via Flatpak if missing
-      ansible.builtin.command:
-        cmd: flatpak install -y flathub org.jaspstats.JASP
-      when: jasp_check.rc != 0
+    - name: Install JASP via Flatpak
+      community.general.flatpak:
+        name: org.jaspstats.JASP
+        state: present
+        method: system
