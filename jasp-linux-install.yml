@@ -14,8 +14,8 @@
       community.general.flatpak_remote:
         name: flathub
         state: present
+        flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
         method: system
-        url: https://dl.flathub.org/repo/flathub.flatpakrepo
 
     - name: Install JASP via Flatpak
       community.general.flatpak:
