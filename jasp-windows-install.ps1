@@ -2,7 +2,7 @@
 .SYNOPSIS
     Installs JASP for SURF Research Cloud Windows workspaces.
 .DESCRIPTION
-    Downloads the latest JASP MSIX from GitHub and installs silently.
+    Downloads the latest JASP MSI from GitHub and installs silently.
 #>
 
 $ErrorActionPreference = "Stop"
@@ -19,20 +19,25 @@ if ($installed) {
 
 Write-Host "Fetching latest JASP version..."
 $release = Invoke-RestMethod -Uri "https://api.github.com/repos/jasp-stats/jasp-desktop/releases/latest"
-$msix = $release.assets | Where-Object { $_.name -like "*Windows.msix" }
+$msi = $release.assets | Where-Object { $_.name -like "*Windows-Community.msi" }
 
-if (-not $msix) {
-    Write-Error "No MSIX asset found in latest release"
+if (-not $msi) {
+    Write-Error "No MSI asset found in latest release"
     exit 1
 }
 
-$file = "$env:TEMP\$($msix.name)"
-Write-Host "Downloading $($msix.name)..."
-Invoke-WebRequest -Uri $msix.browser_download_url -OutFile $file
+$file = "$env:TEMP\$($msi.name)"
+Write-Host "Downloading $($msi.name)..."
+Invoke-WebRequest -Uri $msi.browser_download_url -OutFile $file
 
 Write-Host "Installing..."
-Add-AppxPackage -Path $file
+$proc = Start-Process msiexec.exe -ArgumentList "/i `"$file`" /quiet /norestart" -Wait -PassThru
 Remove-Item $file -Force
+
+if ($proc.ExitCode -ne 0) {
+    Write-Error "Install failed (exit code $($proc.ExitCode))"
+    exit $proc.ExitCode
+}
 
 Write-Host "JASP $($release.tag_name) installed."
 exit 0
