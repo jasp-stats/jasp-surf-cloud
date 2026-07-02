@@ -3,7 +3,6 @@
     Installs JASP for SURF Research Cloud Windows workspaces.
 .DESCRIPTION
     Downloads the latest JASP MSIX from GitHub and installs silently.
-    Always fetches the latest release.
 #>
 
 $ErrorActionPreference = "Stop"
@@ -20,17 +19,20 @@ if ($installed) {
 
 Write-Host "Fetching latest JASP version..."
 $release = Invoke-RestMethod -Uri "https://api.github.com/repos/jasp-stats/jasp-desktop/releases/latest"
-$version = $release.tag_name -replace '^v', ''
+$msix = $release.assets | Where-Object { $_.name -like "*Windows.msix" }
 
-$url  = "https://github.com/jasp-stats/jasp-desktop/releases/download/$($release.tag_name)/JASP-$version-Windows.msix"
-$file = "$env:TEMP\JASP-$version.msix"
+if (-not $msix) {
+    Write-Error "No MSIX asset found in latest release"
+    exit 1
+}
 
-Write-Host "Downloading JASP $version..."
-Invoke-WebRequest -Uri $url -OutFile $file
+$file = "$env:TEMP\$($msix.name)"
+Write-Host "Downloading $($msix.name)..."
+Invoke-WebRequest -Uri $msix.browser_download_url -OutFile $file
 
 Write-Host "Installing..."
 Add-AppxPackage -Path $file
 Remove-Item $file -Force
 
-Write-Host "JASP $version installed."
+Write-Host "JASP $($release.tag_name) installed."
 exit 0
